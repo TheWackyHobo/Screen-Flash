@@ -1,0 +1,202 @@
+module Flash
+    (
+    input wire clock,
+    input wire reset,
+    output reg [3:0] green,
+    output reg [3:0] red,
+    output reg [3:0] blue,
+    output reg hsync,
+    output reg vsync,
+    input [11:0] switches,
+    input wire left,down,right,up
+    );
+    
+reg [9:0] x = 0; // 640 pixels
+reg [9:0] y = 0; // 480 lines
+reg counter = 0;
+reg [1:0] fourc = 0;
+
+parameter H_sync = 96;    
+parameter H_BACK_PORCH = 48;  
+parameter H_front = 16; 
+parameter V_SYNC_CYC = 2;     
+parameter V_BACK_PORCH = 33; 
+parameter V_FRONT_PORCH = 10; 
+
+//pacman
+ reg [9:0] spriteX = 200; // X position of the sprite
+ reg [9:0] spriteY = 150; // Y position of the sprite
+ localparam SPRITE_WIDTH = 13;
+ localparam SPRITE_HEIGHT = 13;
+ reg[1:0] pacmanframe=0;
+ reg [11:0] pacman1 [0:12][0:12];
+ reg [3:0] framecounter=0;
+
+initial 
+begin
+    // Animation 1: Pacman circle
+    pacman1[0] = {'h000,'h000,'h000,'h000,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'h000,'h000,'h000,'h000};
+    pacman1[1] = {'h000,'h000,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'h000,'h000};
+    pacman1[2] = {'h000,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'h000};
+    pacman1[3] = {'h000,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'h000};
+    pacman1[4] = {'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0};
+    pacman1[5] = {'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0};
+    pacman1[6] = {'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0};
+    pacman1[7] = {'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0};
+    pacman1[8] = {'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0};
+    pacman1[9] = {'h000,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'h000};
+    pacman1[10] = {'h000,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'h000};
+    pacman1[11] = {'h000,'h000,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'h000,'h000};
+    pacman1[12] = {'h000,'h000,'h000,'h000,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'h000,'h000,'h000,'h000};
+end
+
+reg [11:0] pacman2 [0:12][0:12];
+initial 
+begin
+    // Animation 2: Pacman mouth open
+    pacman2[0] = {'h000,'h000,'h000,'h000,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'h000,'h000,'h000,'h000};
+    pacman2[1] = {'h000,'h000,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'h000,'h000};
+    pacman2[2] = {'h000,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'h000};
+    pacman2[3] = {'h000,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'h000};
+    pacman2[4] = {'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'h000,'h000,'h000};
+    pacman2[5] = {'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'h000,'h000,'h000,'h000,'h000,'h000};
+    pacman2[6] = {'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'h000,'h000,'h000,'h000,'h000,'h000,'h000};
+    pacman2[7] = {'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'h000,'h000,'h000,'h000,'h000,'h000};
+    pacman2[8] = {'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'h000,'h000,'h000};
+    pacman2[9] = {'h000,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'h000};
+    pacman2[10] = {'h000,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'h000};
+    pacman2[11] = {'h000,'h000,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'h000,'h000};
+    pacman2[12] = {'h000,'h000,'h000,'h000,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'h000,'h000,'h000,'h000};
+end
+
+reg [11:0] pacman3 [0:12][0:12];
+initial 
+    begin
+    // Animation 3: Pacman facing down
+    pacman3[0] = {'h000,'h000,'h000,'h000,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'h000,'h000,'h000,'h000};
+    pacman3[1] = {'h000,'h000,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'h000,'h000,'h000,'h000};
+    pacman3[2] = {'h000,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'h000,'h000,'h000,'h000,'h000};
+    pacman3[3] = {'h000,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'h000,'h000,'h000,'h000,'h000,'h000};
+    pacman3[4] = {'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'h000,'h000,'h000,'h000,'h000,'h000,'h000};
+    pacman3[5] = {'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'h000,'h000,'h000,'h000,'h000,'h000,'h000,'h000};
+    pacman3[6] = {'hFF0,'hFF0,'hFF0,'hFF0,'h000,'h000,'h000,'h000,'h000,'h000,'h000,'h000,'h000};
+    pacman3[7] = {'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'h000,'h000,'h000,'h000,'h000,'h000,'h000,'h000};
+    pacman3[8] = {'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'h000,'h000,'h000,'h000,'h000,'h000,'h000};
+    pacman3[9] = {'h000,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'h000,'h000,'h000,'h000,'h000,'h000};
+    pacman3[10] = {'h000,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'h000,'h000,'h000,'h000,'h000};
+    pacman3[11] = {'h000,'h000,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'h000,'h000,'h000,'h000};
+    pacman3[12] = {'h000,'h000,'h000,'h000,'hFF0,'hFF0,'hFF0,'hFF0,'hFF0,'h000,'h000,'h000,'h000};
+    end
+
+
+always @(posedge clock)
+begin
+//    if (reset == 1)
+//    begin
+//        counter <= 0;
+//        fourc <= 0;
+//        x <= 0;
+//        y <= 0;
+//    end
+//    else
+    begin
+        if (fourc == 1)  
+        begin
+            counter <= ~counter;
+            fourc <= 0; 
+        end
+        else
+            fourc <= fourc + 1;
+    end
+end
+
+// Pixel generation and position
+always @(posedge counter)
+begin
+    framecounter <= framecounter+1;
+    if (framecounter==9)
+        begin
+            framecounter <= 0;
+            pacmanframe <= pacmanframe +1;
+            if (pacmanframe ==3)
+                pacmanframe <= 0;
+        end
+    if (x < 640 && y < 480) 
+    begin
+        green <= switches[7:4];
+        red <= switches[11:8];
+        blue <= switches[3:0];
+        if((x >= spriteX && x < spriteX + SPRITE_WIDTH) && (y >= spriteY && y < spriteY + SPRITE_HEIGHT))
+            begin
+                if(pacmanframe ==0)
+                    begin
+                        if(pacman1[x-spriteX][y-spriteY] == 0)
+                            begin
+                                green <= switches[7:4];
+                                red <= switches[11:8];
+                                blue <= switches[3:0];
+                            end
+                        else
+                            begin
+                                red <= pacman1[x-spriteX][y-spriteY][11:8];
+                                green <= pacman1[x-spriteX][y-spriteY][7:4];
+                                blue <= pacman1[x-spriteX][y-spriteY][3:0];
+                            end
+                    end
+                 if(pacmanframe ==1)
+                    begin
+                        if(pacman1[x-spriteX][y-spriteY] == 0)
+                            begin
+                                green <= switches[7:4];
+                                red <= switches[11:8];
+                                blue <= switches[3:0];
+                            end
+                        else
+                            begin
+                                red <= pacman2[x-spriteX][y-spriteY][11:8];
+                                green <= pacman2[x-spriteX][y-spriteY][7:4];
+                                blue <= pacman2[x-spriteX][y-spriteY][3:0];
+                            end
+                    end
+                if(pacmanframe ==2)
+                    begin
+                        if(pacman1[x-spriteX][y-spriteY] == 0)
+                            begin
+                                green <= switches[7:4];
+                                red <= switches[11:8];
+                                blue <= switches[3:0];
+                            end
+                        else
+                            begin
+                                red <= pacman3[x-spriteX][y-spriteY][11:8];
+                                green <= pacman3[x-spriteX][y-spriteY][7:4];
+                                blue <= pacman3[x-spriteX][y-spriteY][3:0];
+                            end
+                    end                  
+            end
+    end
+    else
+    begin
+        green <= 4'b0000;
+        red <= 4'b0000;
+        blue <= 4'b0000;
+    end
+
+    if (x == 799) 
+    begin
+        x <= 0;
+        if (y == 524) 
+            y <= 0;
+        else
+            y <= y + 1;
+    end 
+    else
+        x <= x + 1;
+end// Sync signals
+always @(posedge counter)
+begin
+    hsync <= ~((x > 640 + H_front) && (x < (640+ H_front +H_sync)));
+    vsync <= ~((y > 480 +16) && (y < (480+16+96)));
+end
+
+endmodule
